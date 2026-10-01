@@ -2,6 +2,7 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 /// <summary>
 /// Affiche les champs d'information dans l'interface
@@ -22,6 +23,10 @@ public class InformationInterface : MonoBehaviour
 
     [SerializeField, Tooltip("Référence à la boule.")]
     private Boule boule;
+
+
+    [SerializeField, Tooltip("Référence à la l'icone Charge dans le Canvas")] 
+    private Image[] iconsCharges;
 
     // / Temps écoulé depuis le début du jeu
     private float tempsEcoule;
@@ -75,5 +80,19 @@ public class InformationInterface : MonoBehaviour
     
         texteVitesse.text = $"{boule.Velocite.magnitude:F2}";
         texteNombreSurfacesParcourues.text = gestionnaireSurface.SurfacesParcourues.ToString();
+
+        // pour chaque icon trouvé on l'affiche et on le cache selon le nombre de charges disponibles
+        for (int i = 0; i< iconsCharges.Length; i++)
+        {
+            if(i < boule.Charges)
+            {
+                //source :https://discussions.unity.com/t/how-to-enable-and-disable-canvas-image/559413
+                iconsCharges[i].enabled = true;
+            }
+            else
+            {
+                iconsCharges[i].enabled = false;
+            }
+        }
     }
 }

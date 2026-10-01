@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -14,6 +15,20 @@ public class Boule : MonoBehaviour
     [SerializeField, Tooltip("Force de déplacement de la boule.")]
     private float forceDeplacement;
 
+    [SerializeField, Tooltip("Le maximum de charges à utliser")]
+    private int maxCharges = 3;
+
+    [SerializeField, Tooltip("La force d'accelélartion donnée")]
+    private float forceAcceleration = 4f;
+
+    [SerializeField, Tooltip("La durée d'accéleration")]
+    private float durreAcceleration = 1.15f;
+
+    public int Charges
+    {
+        get{return charges;}
+    }
+
     // Force appliquée à la boule pour le déplacement à chaque frame.
     private Vector3 forceAppliquee;
 
@@ -25,9 +40,17 @@ public class Boule : MonoBehaviour
     /// </summary>
     public Vector3 Velocite => rigidbody.linearVelocity;
 
+    private int charges;
+    private bool EnAcceleration;
+
     private void Start()
     {
         rigidbody = GetComponent<Rigidbody>();
+        PlayerInput controles = ControleurJeu.Instance.Controles;
+        controles.actions.FindAction("Diriger").performed += CommencerDirection;
+        controles.actions.FindAction("Diriger").canceled += ArreterDirection;
+        controles.actions.FindAction("Commencer").performed += CommencerJeu;
+        controles.actions.FindAction("Accelerer").performed += UtiliserCharge;
     }
 
     private void OnDestroy()
@@ -42,6 +65,7 @@ public class Boule : MonoBehaviour
 
         controles.actions.FindAction("Diriger").performed -= CommencerDirection;
         controles.actions.FindAction("Diriger").canceled -= ArreterDirection;
+        controles.actions.FindAction("Accelerer").performed -= UtiliserCharge;
     }
 
     private void Update()
@@ -56,6 +80,48 @@ public class Boule : MonoBehaviour
     {
         Diriger();
     }
+    /// <summary>
+    /// utliser la charge quand la balle traverse l'objet acceleration
+    /// </summary>
+    public void AjouterCharge()
+    {
+        if(charges < maxCharges)
+        {
+            charges++;
+        }
+    }
+
+    /// <summary>
+    /// qunad on clique sur W on appelle cette méthode
+    /// </summary>
+    /// <param name="context"></param>
+    private void UtiliserCharge(InputAction.CallbackContext context)
+    {
+        if(charges > 0 && !EnAcceleration)
+        {
+            StartCoroutine(Accelerer());
+        }
+    }
+
+    /// <summary>
+    /// Coroutine pour l'Accéleration
+    /// </summary>
+    /// <returns></returns>
+    private IEnumerator Accelerer()
+    {
+        EnAcceleration = true;
+        charges--;
+
+        float duree = 0f;
+        while(duree < durreAcceleration)
+        {
+            rigidbody.AddForce(Vector3.forward * forceAcceleration, ForceMode.Acceleration);
+            duree += Time.deltaTime;
+            yield return null;
+        }
+        EnAcceleration = false;
+    }
+
 
     private void CommencerDirection(InputAction.CallbackContext contexte)
     {
@@ -65,6 +131,12 @@ public class Boule : MonoBehaviour
     private void ArreterDirection(InputAction.CallbackContext contexte)
     {
         forceAppliquee = Vector3.zero;
+    }
+
+    private void CommencerJeu(InputAction.CallbackContext context)
+    {
+        rigidbody.useGravity = true;
+        ControleurJeu.Instance.Controles.actions.FindAction("Commencer").performed -= CommencerJeu;
     }
 
     private void Diriger()
